@@ -196,7 +196,7 @@ echo "root:$ROOT_PASSWORD" | chpasswd
 
 # Instalar pacotes adicionais
 pacman -Syu --noconfirm
-pacman -S --noconfirm networkmanager sudo gnome gdm git wget efibootmgr dosfstools ntfsprogs gnome-tweaks ttf-dejavu ttf-dejavu-nerd neovim alacritty tmux tmuxp
+pacman -S --noconfirm networkmanager sudo base-devel gnome gdm git wget efibootmgr dosfstools ntfsprogs gnome-tweaks ttf-dejavu ttf-dejavu-nerd alacritty tmux tmuxp
 
 # Configurar EFISTUB
 cp /boot/vmlinuz-linux /boot/vmlinuz-linux.efi

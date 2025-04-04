@@ -14,7 +14,7 @@ if [ -f "$HOME/.post-install-pending" ]; then
     # Exemplo: instalar pacotes com pacman
     log "Instalando pacotes necessarios com pacman..."
     sudo pacman -Syu --noconfirm
-    sudo pacman -S --noconfirm base-devel
+    sudo pacman -S --noconfirm --needed base-devel git wget xclip nodejs npm
     
     # Atualizar a lista de pacotes Flatpak
     log "Atualizando Flatpak..."
@@ -22,7 +22,7 @@ if [ -f "$HOME/.post-install-pending" ]; then
 
     # Instalar aplicativos Flatpak
     log "Instalando aplicativos Flatpak..."
-    flatpak install -y app.zen_browser.zen com.mattjakeman.ExtensionManager com.spotify.Client
+    flatpak install -y app.zen_browser.zen com.mattjakeman.ExtensionManager
 
     # Confirmar instalação
     log "Aplicativos Flatpak instalados com sucesso!"
@@ -30,16 +30,18 @@ if [ -f "$HOME/.post-install-pending" ]; then
     # Instalar YAY (AUR helper)
     log "Instalando o YAY (AUR helper)..."
     # Baixar e instalar o YAY
-    git clone https://aur.archlinux.org/cgit/aur.git/refs/heads/master .yay
-    cd .yay
-    makepkg -si --noconfirm
-    cd ..
-    rm -rf .yay
-
+    git clone https://aur.archlinux.org/yay.git .yay
+    cd .yay && makepkg -si --noconfirm && cd .. && rm -rf .yay
     log "YAY instalado com sucesso!"
-
-    log "Pós-instalação concluída!"
-    log "Log completo disponível em $LOG_FILE"
+    
+    # Atualizando yay
+    log "Atualizando e gerando database do YAY"
+    yay -Syu --noconfirm
+    log "Instalando pacotes..."
+    yay -S --noconfirm spotify spicetify-cli lazygit neovim
+    log "Pacotes instalados."
+    
+    log "Limpando pós instalação..."
 
     # Remove a flag de pós-instalação
     rm "$HOME/.post-install-pending"
@@ -49,6 +51,13 @@ if [ -f "$HOME/.post-install-pending" ]; then
 
     # Remove o próprio script de pós-instalação
     rm "$0"
+
+    log "Pós-instalação concluída!"
+    log "Log completo disponível em $LOG_FILE"
+    echo ""
+    log "Reiniciando em 5s..."
+    # Reiniciando
+    sleep && reboot
 fi
 
 # gnome extension manager app
