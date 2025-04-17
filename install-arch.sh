@@ -42,7 +42,17 @@ if [ -z "$DISK_NVME" ] || [ -z "$DISK_HD" ] || [ -z "$TIMEZONE" ] || [ -z "$HOST
 fi
 
 # Mensagem informativa para a senha do root
+clear
+log "======================================================"
+log "██████╗  ██████╗  ██████╗ ████████╗"
+log "██╔══██╗██╔═══██╗██╔═══██╗╚══██╔══╝"
+log "██████╔╝██║   ██║██║   ██║   ██║   "
+log "██╔══██╗██║   ██║██║   ██║   ██║   "
+log "██║  ██║╚██████╔╝╚██████╔╝   ██║   "
+log "╚═╝  ╚═╝ ╚═════╝  ╚═════╝    ╚═╝   "
+log "======================================================"
 log "Agora, será solicitada a senha do usuário root."
+echo ""
 log "Pressione Enter para continuar..."
 read -r
 
@@ -64,7 +74,17 @@ while true; do
 done
 
 # Mensagem informativa para o nome do usuário
+clear
+log "======================================================"
+log "██╗   ██╗███████╗██╗   ██╗ █████╗ ██████╗ ██╗ ██████╗"
+log "██║   ██║██╔════╝██║   ██║██╔══██╗██╔══██╗██║██╔═══██╗"
+log "██║   ██║███████╗██║   ██║███████║██████╔╝██║██║   ██║"
+log "██║   ██║╚════██║██║   ██║██╔══██║██╔══██╗██║██║   ██║"
+log "╚██████╔╝███████║╚██████╔╝██║  ██║██║  ██║██║╚██████╔╝"
+log " ╚═════╝ ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝ ╚═════╝ "
+log "======================================================"
 log "Vamos criar o seu usuário."
+echo ""
 log "Pressione Enter para continuar..."
 read -r
 
@@ -93,8 +113,77 @@ while true; do
   fi
 done
 
+# Perguntar se deseja formatar o HD
+# https://patorjk.com/software/taag/#p=display&f=ANSI%20Shadow&t=FORMAT
+clear
+log "======================================================"
+log "⚠️  ATENÇÃO: LEIA COM ATENCAO !!! ⚠️"
+log "======================================================"
+log "███████╗ ██████╗ ██████╗ ███╗   ███╗ █████╗ ████████╗"
+log "██╔════╝██╔═══██╗██╔══██╗████╗ ████║██╔══██╗╚══██╔══╝"
+log "█████╗  ██║   ██║██████╔╝██╔████╔██║███████║   ██║   "
+log "██╔══╝  ██║   ██║██╔══██╗██║╚██╔╝██║██╔══██║   ██║   "
+log "██║     ╚██████╔╝██║  ██║██║ ╚═╝ ██║██║  ██║   ██║   "
+log "╚═╝      ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   "
+log "======================================================"
+log "Voce pode apagar o $DISK_HD ou somente adicionar as "
+log "particoes ja existentes caso o $DISK_HD nao tenha "
+log "sido formatado anteriormente ou tenha sido substituido"
+log "======================================================"
+log "💀 TODAS AS PARTIÇÕES SERÃO APAGADAS IRREVERSIVELMENTE 💀"
+log "------------------------------------------------------"
+log "Deseja formatar completamente o disco $DISK_HD? (y/N)"
+read -r format_hd_response
+
+if [[ "$format_hd_response" == "y" || "$format_hd_response" == "Y" ]]; then
+  log "Particionando o disco $DISK_HD..."
+  parted -s "$DISK_HD" mklabel gpt
+  parted -s "$DISK_HD" mkpart primary ext4 1MiB 128GiB     # /workspace - 128GB
+  parted -s "$DISK_HD" mkpart primary ext4 128GiB 564GiB   # /data - ~436GB
+  parted -s "$DISK_HD" mkpart primary ext4 564GiB 100%     # /bkp - ~436GB
+
+  log "Formatando o disco $DISK_HD..."
+  mkfs.ext4 "${DISK_HD}1"
+  mkfs.ext4 "${DISK_HD}2"
+  mkfs.ext4 "${DISK_HD}3"
+
+elif [[ "$format_hd_response" == "n" || "$format_hd_response" == "N" || -z "$format_hd_response" ]]; then
+  log "Deseja apenas montar as partições existentes do HD? (y/N)"
+  read -r mount_hd_response
+
+  if [[ "$mount_hd_response" != "y" && "$mount_hd_response" != "Y" ]]; then
+    log "Ok, as partições do HD não serão montadas."
+  else
+    log "Montando as partições do HD existentes..."
+
+    mkdir -p /mnt/workspace /mnt/data /mnt/bkp
+
+    # Tentar montar, e validar se deu bom
+    mount "${DISK_HD}1" /mnt/workspace || { log "Erro ao montar ${DISK_HD}1 em /mnt/workspace"; exit 1; }
+    mount "${DISK_HD}2" /mnt/data || { log "Erro ao montar ${DISK_HD}2 em /mnt/data"; exit 1; }
+    mount "${DISK_HD}3" /mnt/bkp || { log "Erro ao montar ${DISK_HD}3 em /mnt/bkp"; exit 1; }
+
+    log "Partições do HD montadas com sucesso."
+  fi
+else
+  log "Resposta inválida. Encerrando."
+  exit 1
+fi
+
+
 # Confirmar a instalação
-log "Este script irá apagar os discos $DISK_NVME e $DISK_HD e instalar o Arch Linux em $DISK_NVME."
+clear
+log "======================================================"
+log "⚠️  ATENÇÃO: LEIA COM ATENCAO !!! ⚠️"
+log "======================================================"
+log "██╗███╗   ██╗███████╗████████╗ █████╗ ██╗     ██╗     "
+log "██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██║     ██║     "
+log "██║██╔██╗ ██║███████╗   ██║   ███████║██║     ██║     "
+log "██║██║╚██╗██║╚════██║   ██║   ██╔══██║██║     ██║     "
+log "██║██║ ╚████║███████║   ██║   ██║  ██║███████╗███████╗"
+log "╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝"
+log "======================================================"
+log "Este script irá apagar o disco $DISK_NVME e instalar o Arch Linux em $DISK_NVME."
 log "Usuário: $USERNAME | Senhas: [ocultas] | Deseja continuar? (y/N)"
 read -r resposta
 if [[ "$resposta" != "y" && "$resposta" != "Y" ]]; then
@@ -102,6 +191,15 @@ if [[ "$resposta" != "y" && "$resposta" != "Y" ]]; then
   exit 1
 fi
 
+clear
+log "======================================================"
+log "██╗███╗   ██╗███████╗████████╗ █████╗ ██╗     ██╗     "
+log "██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██║     ██║     "
+log "██║██╔██╗ ██║███████╗   ██║   ███████║██║     ██║     "
+log "██║██║╚██╗██║╚════██║   ██║   ██╔══██║██║     ██║     "
+log "██║██║ ╚████║███████║   ██║   ██║  ██║███████╗███████╗"
+log "╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝"
+log "======================================================"
 # Atualizar o relógio do sistema
 timedatectl set-ntp true
 
@@ -110,55 +208,33 @@ if [ ! -b "$DISK_NVME" ]; then
   log "Erro: O disco $DISK_NVME não foi encontrado!"
   exit 1
 fi
-if [ ! -b "$DISK_HD" ]; then
-  log "Erro: O disco $DISK_HD não foi encontrado!"
-  exit 1
-fi
 
 # Particionamento do disco NVMe
 log "Particionando o disco $DISK_NVME..."
 parted -s "$DISK_NVME" mklabel gpt
-parted -s "$DISK_NVME" mkpart primary fat32 1MiB 2GiB    # /boot (EFI) - 2GB
+parted -s "$DISK_NVME" mkpart primary fat32 1MiB 2GiB     # /boot (EFI) - 2GB
 parted -s "$DISK_NVME" set 1 esp on
-parted -s "$DISK_NVME" mkpart primary ext4 2GiB 82GiB    # / - 80GB
-parted -s "$DISK_NVME" mkpart primary ext4 82GiB 100%    # /home - ~174GB
-parted -s "$DISK_NVME" set 1 boot on
-
-# Particionamento do disco HD
-log "Particionando o disco $DISK_HD..."
-parted -s "$DISK_HD" mklabel gpt
-parted -s "$DISK_HD" mkpart primary ext4 1MiB 128GiB     # /workspace - 128GB
-parted -s "$DISK_HD" mkpart primary ext4 128GiB 564GiB   # /data - ~436GB
-parted -s "$DISK_HD" mkpart primary ext4 564GiB 100%     # /bkp - ~436GB
+parted -s "$DISK_NVME" mkpart primary linux-swap 2GiB 18GiB  # SWAP - 16GB
+parted -s "$DISK_NVME" mkpart primary ext4 18GiB 98GiB     # / - 80GB
+parted -s "$DISK_NVME" mkpart primary ext4 98GiB 100%      # /home 
 
 # Formatar as partições do NVMe
 log "Formatando o disco $DISK_NVME..."
 mkfs.fat -F32 "${DISK_NVME}p1"  # /boot (EFI)
-mkfs.ext4 "${DISK_NVME}p2"      # /
-mkfs.ext4 "${DISK_NVME}p3"      # /home
+mkswap "${DISK_NVME}p2"         # SWAP
+mkfs.ext4 "${DISK_NVME}p3"      # /
+mkfs.ext4 "${DISK_NVME}p4"      # /home
 
-# Formatar as partições do HD
-log "Formatando o disco $DISK_HD..."
-mkfs.ext4 "${DISK_HD}1"         # /workspace
-mkfs.ext4 "${DISK_HD}2"         # /data
-mkfs.ext4 "${DISK_HD}3"         # /bkp
+# Ativar swap
+swapon "${DISK_NVME}p2"
 
 # Montar as partições do NVMe
-log "Montando as partições do NVMe..."
-mount "${DISK_NVME}p2" /mnt
+log "Montando as partições do disco $DISK_NVME..."
+mount "${DISK_NVME}p3" /mnt
 mkdir /mnt/boot
 mkdir /mnt/home
 mount "${DISK_NVME}p1" /mnt/boot
-mount "${DISK_NVME}p3" /mnt/home
-
-# Montar as partições do HD
-log "Montando as partições do HD..."
-mkdir /mnt/workspace
-mkdir /mnt/data
-mkdir /mnt/bkp
-mount "${DISK_HD}1" /mnt/workspace
-mount "${DISK_HD}2" /mnt/data
-mount "${DISK_HD}3" /mnt/bkp
+mount "${DISK_NVME}p4" /mnt/home
 
 # Instalar o sistema base
 log "Instalando pacotes base..."
@@ -196,7 +272,7 @@ echo "root:$ROOT_PASSWORD" | chpasswd
 
 # Instalar pacotes adicionais
 pacman -Syu --noconfirm
-pacman -S --noconfirm networkmanager sudo base-devel gnome gdm git wget efibootmgr dosfstools ntfsprogs gnome-tweaks ttf-dejavu ttf-dejavu-nerd alacritty tmux tmuxp
+pacman -S --noconfirm networkmanager sudo base-devel gnome gdm efibootmgr ttf-dejavu ttf-dejavu-nerd docker
 
 # Configurar EFISTUB
 cp /boot/vmlinuz-linux /boot/vmlinuz-linux.efi
@@ -205,6 +281,8 @@ efibootmgr -c -d "$DISK_NVME" -p 1 -L "Arch Linux" -l "\vmlinuz-linux.efi" -u "r
 
 ## Criar usuário e adicionar ao grupo wheel (sudo)
 useradd -m -G wheel -s /bin/bash "$USERNAME"
+## Adiciona usuario ao docker
+usermod -aG docker "$USERNAME"
 echo "$USERNAME:$USER_PASSWORD" | chpasswd
 
 # Configurar a fonte DejaVu como padrão no GNOME para o usuário
@@ -212,41 +290,34 @@ su - "$USERNAME" -c "gsettings set org.gnome.desktop.interface font-name 'DejaVu
 su - "$USERNAME" -c "gsettings set org.gnome.desktop.interface document-font-name 'DejaVu Sans 11'"
 su - "$USERNAME" -c "gsettings set org.gnome.desktop.interface monospace-font-name 'DejaVu Sans Mono 11'"
 
-# Configurar Alacritty como terminal padrão
-su - "$USERNAME" -c "gsettings set org.gnome.desktop.default-applications.terminal exec 'alacritty'"
-su - "$USERNAME" -c "gsettings set org.gnome.desktop.default-applications.terminal exec-arg ''"
-
-# Configurar atalho de teclado Super+T para abrir o Alacritty
-su - "$USERNAME" -c "gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings \"['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/']\""
-su - "$USERNAME" -c "gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ name 'Open Terminal'"
-su - "$USERNAME" -c "gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ command 'alacritty'"
-su - "$USERNAME" -c "gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ binding '<Super>t'"
-
 # Ajustar permissões e tornar o post-install.sh executável
+cp post-install.sh /mnt/home/$USERNAME/post-install.sh
 chmod +x /home/$USERNAME/post-install.sh
-chown $USERNAME:$USERNAME /home/$USERNAME/post-install.sh
+chown $USERNAME:$USERNAME /mnt/home/$USERNAME/post-install.sh
 
 # Criar o diretório autostart e o arquivo .desktop
-mkdir -p /home/$USERNAME/.config/autostart
-cat <<EOF2 > /home/$USERNAME/.config/autostart/post-install.desktop
+mkdir -p /mnt/home/$USERNAME/.config/autostart
+cat <<EOF > /mnt/home/$USERNAME/.config/autostart/post-install.desktop
 [Desktop Entry]
 Type=Application
 Name=Post Install Script
-Exec=gnome-terminal -- /home/$USERNAME/post-install.sh
+Exec=gnome-terminal -- bash -c "/home/$USERNAME/post-install.sh; read -n 1 -s -r -p 'Press any key to close...'"
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
-EOF2
-chown -R $USERNAME:$USERNAME /home/$USERNAME/.config
+EOF
+
+chown -R $USERNAME:$USERNAME /mnt/home/$USERNAME/.config
 
 # Criar flag para indicar que o post-install está pendente
-touch /home/$USERNAME/.post-install-pending
-chown $USERNAME:$USERNAME /home/$USERNAME/.post-install-pending
+touch /mnt/home/$USERNAME/.post-install-pending
+chown $USERNAME:$USERNAME /mnt/home/$USERNAME/.post-install-pending
 
 # Habilitar serviços
 systemctl enable NetworkManager
 systemctl enable gdm
 systemctl enable bluetooth
+systemctl enable docker
 
 # Garantir que o grupo wheel tenha privilégios de sudo
 sed -i 's/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
@@ -265,13 +336,24 @@ if [ $? -ne 0 ]; then
 fi
 
 # Desmontar e reiniciar
+clear
+log "======================================================"
+log "███████╗██╗███╗   ██╗██╗███████╗██╗  ██╗███████╗██████╗ "
+log "██╔════╝██║████╗  ██║██║██╔════╝██║  ██║██╔════╝██╔══██╗"
+log "█████╗  ██║██╔██╗ ██║██║███████╗███████║█████╗  ██║  ██║"
+log "██╔══╝  ██║██║╚██╗██║██║╚════██║██╔══██║██╔══╝  ██║  ██║"
+log "██║     ██║██║ ╚████║██║███████║██║  ██║███████╗██████╔╝"
+log "╚═╝     ╚═╝╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝╚══════╝╚═════╝ "
+log "======================================================"
 log "Desmontando partições e reiniciando..."
 umount -R /mnt || { log "Erro ao desmontar as partições!"; exit 1; }
-log "Instalação concluída com sucesso! Você pode agora reiniciar o sistema."
+log "Instalação concluída com sucesso! "
+echo ""
 log "Log completo disponível em $LOG_FILE"
 
 # Recomendar a desconexão do meio de instalação
 log "Você pode remover o pen-drive."
+log "Reiniciando em 5s..."
 
 # Reiniciar o sistema
 sleep 5
