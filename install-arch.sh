@@ -237,6 +237,7 @@ mount "${DISK_NVME}p1" /mnt/boot
 mount "${DISK_NVME}p4" /mnt/home
 
 # Instalar o sistema base
+clear
 log "Instalando pacotes base..."
 pacstrap /mnt base linux linux-firmware || { log "Erro ao instalar pacotes base!"; exit 1; }
 
@@ -245,8 +246,8 @@ log "Gerando fstab..."
 genfstab -U /mnt >> /mnt/etc/fstab
 
 # Copiar o post-install.sh para o sistema
-log "Copiando o script post-install.sh para /mnt/home/$USERNAME..."
-cp "$POST_INSTALL_SRC" /mnt/home/$USERNAME/post-install.sh
+#log "Copiando o script post-install.sh para /mnt/home/$USERNAME..."
+#cp "$POST_INSTALL_SRC" /mnt/home/$USERNAME/post-install.sh
 
 # Configurar o sistema (chroot)
 log "Configurando o sistema com chroot..."
@@ -271,10 +272,12 @@ echo "127.0.1.1 $HOSTNAME.localdomain $HOSTNAME" >> /etc/hosts
 echo "root:$ROOT_PASSWORD" | chpasswd
 
 # Instalar pacotes adicionais
+clear
 pacman -Syu --noconfirm
 pacman -S --noconfirm networkmanager sudo base-devel gnome gdm efibootmgr ttf-dejavu ttf-dejavu-nerd docker
 
 # Configurar EFISTUB
+clear
 cp /boot/vmlinuz-linux /boot/vmlinuz-linux.efi
 cp /boot/initramfs-linux.img /boot/
 efibootmgr -c -d "$DISK_NVME" -p 1 -L "Arch Linux" -l "\vmlinuz-linux.efi" -u "root=PARTUUID=$(blkid -s PARTUUID -o value ${DISK_NVME}p2) rw initrd=\initramfs-linux.img"
@@ -282,36 +285,36 @@ efibootmgr -c -d "$DISK_NVME" -p 1 -L "Arch Linux" -l "\vmlinuz-linux.efi" -u "r
 ## Criar usuário e adicionar ao grupo wheel (sudo)
 useradd -m -G wheel -s /bin/bash "$USERNAME"
 ## Adiciona usuario ao docker
-usermod -aG docker "$USERNAME"
+#usermod -aG docker "$USERNAME"
 echo "$USERNAME:$USER_PASSWORD" | chpasswd
 
 # Configurar a fonte DejaVu como padrão no GNOME para o usuário
-su - "$USERNAME" -c "gsettings set org.gnome.desktop.interface font-name 'DejaVu Sans 11'"
-su - "$USERNAME" -c "gsettings set org.gnome.desktop.interface document-font-name 'DejaVu Sans 11'"
-su - "$USERNAME" -c "gsettings set org.gnome.desktop.interface monospace-font-name 'DejaVu Sans Mono 11'"
+#su - "$USERNAME" -c "gsettings set org.gnome.desktop.interface font-name 'DejaVu Sans 11'"
+#su - "$USERNAME" -c "gsettings set org.gnome.desktop.interface document-font-name 'DejaVu Sans 11'"
+#su - "$USERNAME" -c "gsettings set org.gnome.desktop.interface monospace-font-name 'DejaVu Sans Mono 11'"
 
 # Ajustar permissões e tornar o post-install.sh executável
-cp post-install.sh /mnt/home/$USERNAME/post-install.sh
-chmod +x /home/$USERNAME/post-install.sh
-chown $USERNAME:$USERNAME /mnt/home/$USERNAME/post-install.sh
+#cp post-install.sh /mnt/home/$USERNAME/post-install.sh
+#chmod +x /home/$USERNAME/post-install.sh
+#chown $USERNAME:$USERNAME /mnt/home/$USERNAME/post-install.sh
 
 # Criar o diretório autostart e o arquivo .desktop
-mkdir -p /mnt/home/$USERNAME/.config/autostart
-cat <<EOF > /mnt/home/$USERNAME/.config/autostart/post-install.desktop
-[Desktop Entry]
-Type=Application
-Name=Post Install Script
-Exec=gnome-terminal -- bash -c "/home/$USERNAME/post-install.sh; read -n 1 -s -r -p 'Press any key to close...'"
-Hidden=false
-NoDisplay=false
-X-GNOME-Autostart-enabled=true
-EOF
+#mkdir -p /mnt/home/$USERNAME/.config/autostart
+#cat <<EOF > /mnt/home/$USERNAME/.config/autostart/post-install.desktop
+#[Desktop Entry]
+#Type=Application
+#Name=Post Install Script
+#Exec=gnome-terminal -- bash -c "/home/$USERNAME/post-install.sh; read -n 1 -s -r -p 'Press any key to close...'"
+#Hidden=false
+#NoDisplay=false
+#X-GNOME-Autostart-enabled=true
+#EOF
 
-chown -R $USERNAME:$USERNAME /mnt/home/$USERNAME/.config
+#chown -R $USERNAME:$USERNAME /mnt/home/$USERNAME/.config
 
 # Criar flag para indicar que o post-install está pendente
-touch /mnt/home/$USERNAME/.post-install-pending
-chown $USERNAME:$USERNAME /mnt/home/$USERNAME/.post-install-pending
+#touch /mnt/home/$USERNAME/.post-install-pending
+#chown $USERNAME:$USERNAME /mnt/home/$USERNAME/.post-install-pending
 
 # Habilitar serviços
 systemctl enable NetworkManager
@@ -323,13 +326,14 @@ systemctl enable docker
 sed -i 's/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
 
 # Criar diretórios permanentes para as partições do HD
-mkdir -p /workspace /data /bkp
-chown $USERNAME:$USERNAME /workspace /data /bkp
+#mkdir -p /workspace /data /bkp
+#chown $USERNAME:$USERNAME /workspace /data /bkp
 
 exit
 EOF
 
 # Verificar status do chroot
+clear
 if [ $? -ne 0 ]; then
   log "Erro durante a configuracao no chroot!"
   exit 1
